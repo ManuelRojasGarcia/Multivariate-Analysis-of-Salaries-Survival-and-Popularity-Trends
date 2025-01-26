@@ -1,0 +1,121 @@
+---
+title: "Multivariate Analysis of Salary, Titanic Survival, and Spotify Popularity"
+author: "DataManz"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+required_packages <- c("ggplot2", "gridExtra", "car", "gvlma")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+lapply(required_packages, library, character.only = TRUE)
+```
+
+## **1. Salary Data Analysis**
+
+### **Data Import and Preprocessing**
+```{r}
+salary_data <- read.csv("C:/Users/Manuel/Desktop/datascience_salaries.csv", sep = ",", header = TRUE)
+```
+
+To ensure data quality, missing values are removed:
+```{r}
+salary_data <- na.omit(salary_data)
+```
+
+Factorizing key categorical variables and filtering for full-time employment:
+```{r}
+salary_data$experience_level <- factor(salary_data$experience_level)
+salary_data$job_title <- factor(salary_data$job_title)
+salary_data$employment_type <- factor(salary_data$employment_type)
+salary_data <- salary_data[salary_data$employment_type == "FT", ]
+```
+
+### **Exploratory Data Analysis**
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+```
+
+Creating visualizations to analyze salary distributions:
+```{r}
+p1 <- ggplot(data = salary_data, aes(x = experience_level, y = salary_in_usd)) +
+      geom_boxplot() +
+      labs(x = "Experience Level", y = "Salary in USD") +
+      theme_bw()
+
+p2 <- ggplot(data = salary_data, aes(x = job_title, y = salary_in_usd)) +
+      geom_boxplot() +
+      labs(x = "Job Title", y = "Salary in USD") +
+      theme_bw()
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+Calculating means and standard deviations by experience level and job title:
+```{r}
+mean_by_experience <- tapply(salary_data$salary_in_usd, salary_data$experience_level, mean)
+mean_by_job <- tapply(salary_data$salary_in_usd, salary_data$job_title, mean)
+```
+
+### **ANOVA Analysis**
+
+```{r}
+model_anova <- aov(salary_in_usd ~ experience_level * job_title, data = salary_data)
+summary(model_anova)
+```
+
+**Conclusion:**
+This analysis highlights the influence of experience level and job title on salaries. Significant differences were found across experience levels and job roles, with higher experience leading to higher earnings. However, there is no significant interaction between experience and job title, indicating independent effects. The homogeneity and normality assumptions were tested, revealing potential deviations that must be considered in further analysis.
+
+---
+
+## **2. Titanic Survival Analysis**
+
+### **Data Cleaning and Exploration**
+```{r}
+titanic_data <- read.csv("C:/Users/Manuel/Desktop/titanic.csv", sep = ",", header = TRUE)
+```
+
+Removing missing values:
+```{r}
+titanic_clean <- titanic_data[complete.cases(titanic_data), ]
+```
+
+Building the logistic regression model:
+```{r}
+model_logistic <- glm(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare, data = titanic_clean, family = binomial)
+summary(model_logistic)
+```
+
+**Conclusion:**
+The analysis of Titanic survival rates shows that class, gender, and age significantly influence survival probabilities. Passengers from higher social classes and females had greater chances of survival, while age had a negative correlation with survival likelihood. Assumptions such as normality and homoscedasticity were tested, confirming the model's reliability despite minor deviations.
+
+---
+
+## **3. Spotify Popularity Analysis**
+
+### **Data Processing and Regression Modeling**
+```{r}
+spotify_data <- read.csv("C:/Users/Manuel/Desktop/Popular_Spotify_Songs.csv", sep = ",")
+```
+
+Handling missing values:
+```{r}
+spotify_data <- na.omit(spotify_data)
+```
+
+Regression analysis to predict danceability:
+```{r}
+model_spotify <- lm(danceability_. ~ bpm + valence_., data = spotify_data)
+summary(model_spotify)
+```
+
+**Conclusion:**
+The analysis reveals that both tempo (bpm) and valence have a significant impact on the danceability of songs. The model explains about 18.74% of the variability, suggesting that additional variables should be considered for better predictions. Further feature engineering, such as factorizing categorical variables, was conducted to improve model performance.
+
+---
+
